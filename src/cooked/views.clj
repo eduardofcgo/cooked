@@ -7,7 +7,9 @@
             [hiccup.page :refer [html5 include-css]]
             [ring.util.codec :as codec]))
 
-(def default-meta [[:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]])
+(def default-meta [
+ [:meta {:http-equiv "Content-Type" :content "text/html; charset=utf-8"}]
+ [:meta {:name "viewport" :content "width=device-width, initial-scale=1.0"}]])
 
 (defn- layout [maybe-context & contents]
   (if (map? maybe-context)

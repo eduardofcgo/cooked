@@ -14,7 +14,8 @@
             [ring.middleware.params :as params]
             [ring.middleware.resource :as resource]
             [ring.middleware.session :as session]
-            [ring.util.response :as response])
+            [ring.util.response :as response]
+            [ring.middleware.default-charset :as default-charset])
   (:gen-class))
 
 (def session-store-datasource database/spec)
@@ -33,7 +34,8 @@
      (session/wrap-session {:store session-store})
      (keyword-params/wrap-keyword-params)
      (params/wrap-params)
-     (content-type/wrap-content-type {:mime-types {nil default-content-type}})))
+     (content-type/wrap-content-type {:mime-types {nil default-content-type}})
+     (default-charset/wrap-default-charset "utf-8")))
 
 (defn -main
   [& args]

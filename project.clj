@@ -21,6 +21,7 @@
    [org.jsoup/jsoup "1.15.3"]
    [org.clojure/data.json "2.4.0"]
    [ring "1.9.6"]
+   [ring/ring-headers "0.3.0"]
    [compojure "1.6.2"]
    [buddy/buddy-auth "3.0.1"]
    [buddy/buddy-hashers "1.8.158"]
