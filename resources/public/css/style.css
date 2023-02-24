@@ -253,6 +253,9 @@ ul.items {
 .user-page.login input, .user-page.register input {
   display: block;
 }
+.user-page > form {
+  margin-bottom: 20px;
+}
 .user-page.update form input:nth-child(1) {
   display: block;
 }
