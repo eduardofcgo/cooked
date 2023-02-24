@@ -1,0 +1,1 @@
+alter table account add column private int not null default 0;

@@ -1,0 +1,1 @@
+alter table account drop column private;

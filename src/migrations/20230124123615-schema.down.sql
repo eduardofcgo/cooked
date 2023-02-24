@@ -1,0 +1,11 @@
+drop table if exists session_store;
+--;;
+drop table if exists account;
+--;;
+drop table if exists item;
+--;;
+drop index if exists idx_item_account_url;
+--;;
+drop table if exists item_keyword;
+--;;
+drop table if exists item_fts;

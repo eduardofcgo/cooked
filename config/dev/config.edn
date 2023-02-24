@@ -1,0 +1,9 @@
+{:port 3000
+ :scrape {:client {:max-redirects 5
+                   :socket-timeout 4000
+                   :connection-timeout 4000
+                   :decode-cookies false
+                   :headers {:accept "text/html"
+                             :accept-language "en"
+                             :user-agent "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Mobile Safari/537.36"}}}
+ :db {:connection-uri "jdbc:postgresql://0.0.0.0:5432/cooked?user=postgres&password=postgres"}}
