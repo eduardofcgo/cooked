@@ -118,7 +118,7 @@
            (error "Unable to find new image for item" item-id item-url))))
 
 (defn- export-item-text [item]
- (string/join (System/lineSeparator)
+ (string/join "\n"
               (map item [:title :url :description])))
 
 (defn- export-item-zip [zip-out item]

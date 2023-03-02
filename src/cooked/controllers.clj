@@ -114,7 +114,6 @@
  (if-not (auth/authenticated? request)
          (auth/throw-unauthorized)
          (let [username (:identity session)
-               user (app/get-user username)
                {:strs [private]} form-params
                is-private (= private "true")]
               (do (app/set-user-private username is-private)

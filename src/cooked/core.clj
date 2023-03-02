@@ -10,12 +10,12 @@
             [cooked.views :as views]
             [ring.adapter.jetty :as jetty]
             [ring.middleware.content-type :as content-type]
+            [ring.middleware.default-charset :as default-charset]
             [ring.middleware.keyword-params :as keyword-params]
             [ring.middleware.params :as params]
             [ring.middleware.resource :as resource]
             [ring.middleware.session :as session]
-            [ring.util.response :as response]
-            [ring.middleware.default-charset :as default-charset])
+            [ring.util.response :as response])
   (:gen-class))
 
 (def session-store-datasource database/spec)

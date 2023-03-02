@@ -20,11 +20,15 @@
 (defn valid-keyword? [keyword]
  (let [size (count keyword)]
       (and (> size 3)
-           (< size 50))))
+           (< size 35))))
 
 (defn- ensure-text [maybe-html-text]
  (when maybe-html-text (-> (Jsoup/parse maybe-html-text)
                        (.wholeText))))
+
+(defn- collapse-whitespace [s]
+ (StringUtils/stripToNull
+  (string/replace s #"\s{3,}" "\n\n")))
 
 (defn- json-parse-valid [s]
  (try (json/parse-string s)
@@ -156,50 +160,68 @@
                                          (map keywordize)
                                          (distinct))})))
 
-(defn extract-text-listing [document query]
- (let [matched (first (.select document query))]
-      (when matched
-            (->> (.select matched "*")
-                 (map #(.wholeOwnText %))
-                 (split-double-newline)
-                 (map #(StringUtils/stripToNull %))
-                 (filter #(> (count %) 3))
-                 (map trim-left-list-item)
-                 (seq)))))
+(defn extract-text-listing [element]
+ (when element
+       (->> (.select element "*")
+            (map #(.wholeOwnText %))
+            (split-double-newline)
+            (map #(StringUtils/stripToNull %))
+            (filter #(> (count %) 3))
+            (map trim-left-list-item)
+            (seq))))
 
-(defn extract-recipe-html [jsoup-document]
- (let [ingredients (extract-text-listing jsoup-document "[class~=ingredients]")
-       instructions (extract-text-listing jsoup-document "[class~=instructions|preparation]")]
+(defn- extract-structured-recipe-html [jsoup-document]
+ (let [ingredients-match (first (.select jsoup-document "[class~=ingredients]"))
+       instructions-match (first (.select jsoup-document "[class~=instructions|preparation|directions]"))
+
+       ingredients (extract-text-listing ingredients-match)
+       instructions (extract-text-listing instructions-match)]
       (when (or ingredients instructions)
             {:ingredients ingredients
              :instructions instructions})))
 
+(defn- extract-whole-recipe-html [jsoup-document]
+ (let [selectors [".recipe-callout"
+                  ".tasty-recipes"
+                  ".easyrecipe"
+                  ".innerrecipe"
+                  ".recipe-summary.wide"
+                  ".wprm-recipe-container"
+                  ".recipe-content"
+                  ".simple-recipe-pro"
+                  ".mv-recipe-card"]
+
+       group-selector (string/join ", " selectors)
+       match (first (.select jsoup-document group-selector))]
+
+      (when match {:description (collapse-whitespace (.wholeText match))})))
+
+(defn extract-recipe-html [jsoup-document]
+ (let [{:keys [ingredients instructions] :as recipe} (extract-structured-recipe-html jsoup-document)
+       is-recipe-complete (and ingredients instructions)
+       is-likely-clean-instructions (< (count instructions) 10)]
+
+       (if (and is-recipe-complete is-likely-clean-instructions)
+           recipe
+           (or (extract-whole-recipe-html jsoup-document)
+               recipe))))
+
 (defn build-recipe-text [{:keys [description yield ingredients instructions]}]
   (when (or yield ingredients instructions)
         (str (when (some? description) (ensure-text description))
-             (when (some? yield) (str (System/lineSeparator) "Yields: " (ensure-text yield)))
+             (when (some? yield) (str "\n" "Yields: " (ensure-text yield)))
 
              (when (some? ingredients)
-                   (str (System/lineSeparator) (System/lineSeparator)
-                        (string/join (System/lineSeparator)
+                   (str "\n\n"
+                        (string/join "\n"
                                      (map #(str "- " (ensure-text %)) ingredients))))
 
              (when (some? instructions)
-                   (str (System/lineSeparator) (System/lineSeparator)
-                        (string/join (System/lineSeparator)
+                   (str "\n\n"
+                        (string/join "\n"
                                      (map #(str %1 ". " (ensure-text %2)) (range 1 ##Inf) instructions))))
 
-             (System/lineSeparator))))
-
-(defn video-keywords [nodes]
- (let [excluded #{"Suggest"}
-       found (html/select nodes [:div.video-info-row :a html/text-node])]
-      (remove excluded found)))
-
-(defn videos-actors [nodes]
- (->> (videos-microdata nodes)
-      (mapcat #(get % "actor"))
-      (map #(get % "name"))))
+             "\n")))
 
 (defn extract-title [nodes]
  (or (extract-meta-og nodes "og:title")
@@ -221,8 +243,6 @@
 (defn extract-keywords [nodes]
  (->> (extract-meta nodes :name "keywords")
       (mapcat #(string/split % #","))
-      (concat (videos-actors nodes))
-      (concat (video-keywords nodes))
       (map keywordize)
       (distinct)))
 
