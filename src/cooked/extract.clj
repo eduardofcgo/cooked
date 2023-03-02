@@ -212,14 +212,10 @@
              (when (some? yield) (str "\n" "Yields: " (ensure-text yield)))
 
              (when (some? ingredients)
-                   (str "\n\n"
-                        (string/join "\n"
-                                     (map #(str "- " (ensure-text %)) ingredients))))
+                   (str "\n\n" (string/join "\n" (map #(str "- " (ensure-text %)) ingredients))))
 
              (when (some? instructions)
-                   (str "\n\n"
-                        (string/join "\n"
-                                     (map #(str %1 ". " (ensure-text %2)) (range 1 ##Inf) instructions))))
+                   (str "\n\n" (string/join "\n" (map #(str %1 ". " (ensure-text %2)) (range 1 ##Inf) instructions))))
 
              "\n")))
 

@@ -25,8 +25,8 @@
   clojure.lang.IPersistentMap
   (sql-value [value]
     (doto (PGobject.)
-      (.setType "json")
-      (.setValue (json/write-str value)))))
+          (.setType "json")
+          (.setValue (json/write-str value)))))
 
 (def migration-config {:store :database
                        :migration-dir "migrations/"
