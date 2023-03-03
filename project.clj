@@ -19,6 +19,7 @@
    [org.apache.commons/commons-lang3 "3.12.0"]
    [commons-validator/commons-validator "1.7"]
    [org.jsoup/jsoup "1.15.3"]
+   [com.syncthemall/boilerpipe "1.2.1"]
    [org.clojure/data.json "2.4.0"]
    [ring "1.9.6"]
    [ring/ring-headers "0.3.0"]

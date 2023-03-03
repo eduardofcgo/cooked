@@ -1,8 +1,11 @@
 (ns cooked.extract
  (:import (com.fasterxml.jackson.core JsonParseException)
           (com.google.common.net InternetDomainName)
+          (de.l3s.boilerpipe.extractors DefaultExtractor)
+          (java.io StringReader)
           (org.apache.commons.lang3 StringUtils)
-          (org.jsoup Jsoup))
+          (org.jsoup Jsoup)
+          (org.xml.sax InputSource))
  (:require
   [cheshire.core :as json]
   [clojure.pprint :as pprint]
@@ -24,7 +27,7 @@
 
 (defn- ensure-text [maybe-html-text]
  (when maybe-html-text (-> (Jsoup/parse maybe-html-text)
-                       (.wholeText))))
+                           (.wholeText))))
 
 (defn- collapse-whitespace [s]
  (StringUtils/stripToNull
@@ -109,7 +112,7 @@
        (sequential? prop) (flatten (map extract-keywords-recipe-prop prop))))
 
 (defn extract-recipe-microdata [nodes]
- (let [recipe-data (first (find-microdatas nodes "Recipe"))
+ (let [found-recipe (first (find-microdatas nodes "Recipe"))
        {name "name"
         description "description"
         image-url "image"
@@ -119,8 +122,8 @@
         keywords "keywords"
         section "articleSection"
         ingredients "recipeIngredient"
-        instructions "recipeInstructions"} recipe-data]
-      (when recipe-data {:title (ensure-text (extract-str-recipe-prop name))
+        instructions "recipeInstructions"} found-recipe]
+      (when found-recipe {:title (ensure-text (extract-str-recipe-prop name))
                          :description (ensure-text (extract-str-recipe-prop description))
                          :image-url (extract-str-recipe-prop image-url)
                          :yield (ensure-text (extract-str-recipe-prop yield))
@@ -203,11 +206,16 @@
 
        (if (and is-recipe-complete is-likely-clean-instructions)
            recipe
-           (or (extract-whole-recipe-html jsoup-document)
-               recipe))))
+           (or (extract-whole-recipe-html jsoup-document) recipe))))
+
+(defn extract-article-html [html-text]
+ (let [extractor (DefaultExtractor/getInstance)
+       source (doto (new InputSource (new StringReader html-text))
+                    (.setEncoding "UTF-8"))]
+      (collapse-whitespace (.getText extractor source))))
 
 (defn build-recipe-text [{:keys [description yield ingredients instructions]}]
-  (when (or yield ingredients instructions)
+  (when (and ingredients instructions)
         (str (when (some? description) (ensure-text description))
              (when (some? yield) (str "\n" "Yields: " (ensure-text yield)))
 
@@ -269,22 +277,18 @@
         recipe-image-url :image-url :as recipe} (or (extract-recipe-microdata nodes)
                                                     (extract-recipe-rdf jsoup-document)
                                                     (extract-recipe-html jsoup-document))]
-       {:url url
-        :title (ensure-text (or recipe-title (extract-title nodes)))
-        :image-url (or recipe-image-url (extract-image-url nodes))
-        :video-url (extract-video-url nodes)
+      {:url url
+       :title (ensure-text (or recipe-title (extract-title nodes)))
+       :image-url (or recipe-image-url (extract-image-url nodes))
+       :video-url (extract-video-url nodes)
 
-        :recipe recipe
+       :recipe recipe
 
-        :description (let [description (or recipe-description (extract-description nodes))
-                           recipe-with-better-description (assoc recipe :description description)]
-                          (if-not recipe
-                                  description
-                                  (or (build-recipe-text recipe-with-better-description) description)))
+       :description (or (build-recipe-text recipe) (extract-article-html page-text))
 
-        :keywords (filter valid-keyword? (-> (extract-keywords nodes)
-                                             (concat recipe-keywords)
-                                             (conj (url-keyword url))
-                                             (conj (when (some? recipe) "recipe"))
-                                             (distinct)
-                                             (sort)))}))
+       :keywords (filter valid-keyword? (-> (extract-keywords nodes)
+                                            (concat recipe-keywords)
+                                            (conj (url-keyword url))
+                                            (conj (when (some? recipe) "recipe"))
+                                            (distinct)
+                                            (sort)))}))
