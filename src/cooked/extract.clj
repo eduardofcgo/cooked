@@ -215,7 +215,7 @@
       (collapse-whitespace (.getText extractor source))))
 
 (defn build-recipe-text [{:keys [description yield ingredients instructions]}]
-  (when (and ingredients instructions)
+  (when (or description ingredients instructions)
         (str (when (some? description) (ensure-text description))
              (when (some? yield) (str "\n" "Yields: " (ensure-text yield)))
 
