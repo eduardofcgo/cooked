@@ -1,7 +1,7 @@
 (ns cooked.extract
  (:import (com.fasterxml.jackson.core JsonParseException)
           (com.google.common.net InternetDomainName)
-          (de.l3s.boilerpipe.extractors DefaultExtractor)
+          (de.l3s.boilerpipe.extractors DefaultExtractor ArticleExtractor)
           (java.io StringReader)
           (org.apache.commons.lang3 StringUtils)
           (org.jsoup Jsoup)
@@ -208,11 +208,19 @@
            recipe
            (or (extract-whole-recipe-html jsoup-document) recipe))))
 
-(defn extract-article-html [html-text]
- (let [extractor (DefaultExtractor/getInstance)
-       source (doto (new InputSource (new StringReader html-text))
+(defn extract-article-html [html-text extractor]
+ (let [source (doto (new InputSource (new StringReader html-text))
                     (.setEncoding "UTF-8"))]
-      (collapse-whitespace (.getText extractor source))))
+      (.getText extractor source)))
+
+(defn extract-article-recipe-html [html-text]
+ (let [full-article (extract-article-html html-text DefaultExtractor/INSTANCE)
+       news-article (extract-article-html html-text ArticleExtractor/INSTANCE)
+
+       maybe-recipe-ingredients (StringUtils/substringBefore full-article news-article)
+       recipe-article (str maybe-recipe-ingredients news-article)]
+
+      (collapse-whitespace recipe-article)))
 
 (defn build-recipe-text [{:keys [description yield ingredients instructions]}]
   (when (or description ingredients instructions)
@@ -284,7 +292,7 @@
 
        :recipe recipe
 
-       :description (or (build-recipe-text recipe) (extract-article-html page-text))
+       :description (or (build-recipe-text recipe) (extract-article-recipe-html page-text))
 
        :keywords (filter valid-keyword? (-> (extract-keywords nodes)
                                             (concat recipe-keywords)
