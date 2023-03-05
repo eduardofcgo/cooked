@@ -208,7 +208,7 @@
            recipe
            (or (extract-whole-recipe-html jsoup-document) recipe))))
 
-(defn extract-article-html [html-text extractor]
+(defn- extract-article-html [html-text extractor]
  (let [source (doto (new InputSource (new StringReader html-text))
                     (.setEncoding "UTF-8"))]
       (.getText extractor source)))
@@ -217,10 +217,17 @@
  (let [full-article (extract-article-html html-text DefaultExtractor/INSTANCE)
        news-article (extract-article-html html-text ArticleExtractor/INSTANCE)
 
-       maybe-recipe-ingredients (StringUtils/substringBefore full-article news-article)
-       recipe-article (str maybe-recipe-ingredients news-article)]
+       before-news (StringUtils/substringBefore full-article news-article)
+       news (StringUtils/substringAfter news-article before-news)
 
-      (collapse-whitespace recipe-article)))
+       found-before-news (not= full-article before-news)]
+
+       (cond (not found-before-news)
+                news-article
+             (and found-before-news (not-empty news))
+               (str before-news news)
+             (and found-before-news (empty? news))
+               (str before-news news-article))))
 
 (defn build-recipe-text [{:keys [description yield ingredients instructions]}]
   (when (or description ingredients instructions)
