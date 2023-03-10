@@ -192,7 +192,9 @@
                   ".wprm-recipe-container"
                   ".recipe-content"
                   ".simple-recipe-pro"
-                  ".mv-recipe-card"]
+                  ".mv-recipe-card"
+                  "#recipecard"
+                  "#recipecardo"]
 
        group-selector (string/join ", " selectors)
        match (first (.select jsoup-document group-selector))]
@@ -208,14 +210,14 @@
            recipe
            (or (extract-whole-recipe-html jsoup-document) recipe))))
 
-(defn- extract-article-html [html-text extractor]
+(defn- extract-html [html-text extractor]
  (let [source (doto (new InputSource (new StringReader html-text))
                     (.setEncoding "UTF-8"))]
       (.getText extractor source)))
 
-(defn extract-article-recipe-html [html-text]
- (let [full-article (extract-article-html html-text DefaultExtractor/INSTANCE)
-       news-article (extract-article-html html-text ArticleExtractor/INSTANCE)
+(defn extract-article-html [html-text]
+ (let [full-article (extract-html html-text DefaultExtractor/INSTANCE)
+       news-article (extract-html html-text ArticleExtractor/INSTANCE)
 
        before-news (StringUtils/substringBefore full-article news-article)
        news (StringUtils/substringAfter news-article before-news)
@@ -299,7 +301,7 @@
 
        :recipe recipe
 
-       :description (or (build-recipe-text recipe) (extract-article-recipe-html page-text))
+       :description (or (build-recipe-text recipe) (extract-article-html page-text))
 
        :keywords (filter valid-keyword? (-> (extract-keywords nodes)
                                             (concat recipe-keywords)
